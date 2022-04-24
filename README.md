@@ -13,17 +13,3 @@
 	Although tested, the module is not yet ready for production.
 	It has basic functionalities, but still requires a lot of work.
 
-### Working features
-	- configure module
-	- toggle testing/live working mode
-	- get nameservers for a domain
-	- set nameservers for a domain
-	- renew a domain
-	- register a domain nameserver
-	- modify a domain nameserver
-	- delete a domain nameserver
-	
-	
-### Feedback
-	We appreciate any feedback on the module behavior.
-	
