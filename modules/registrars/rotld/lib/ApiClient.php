@@ -523,7 +523,7 @@ class ApiClient {
 								'expirydate' 		=> $response_array['data']['expiration_date'],
 								'active'			=> $response_array['data']['statuses'][0],
 								'expired'			=> $response_array['data']['deletion_date'],
-								'transferredaway'	=> $response_array['data']['statuses'][0],
+								'transferredaway'	=> '',
 					);
 					break;
 				default:
