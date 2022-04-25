@@ -2,23 +2,30 @@
   "schema": "1.0",
   "type": "whmcs-registrars",
   "name": "rotld",
-  "license": "proprietary",
+  "license": "GPLv3",
   "category": "domains",
   "description": {
-    "name": "Hexonet",
-    "tagline": "A reseller wholesale domain registration provider."
+    "name": "rotld",
+    "tagline": "A module for Romanian domains registration."
+	"features": [
+		"display existing nameservers",
+		"set nameservers for a domain",
+		"create private nameservers",
+		"modify private nameservers",
+		"delete private nameservers"
+	]
   },
   "logo": {
     "filename": "logo.png"
   },
   "support": {
-    "homepage": "https:\/\/www.hexonet.net\/",
-    "docs_url": "https:\/\/docs.whmcs.com\/HexoNet"
+    "homepage": "https:\/\/hahgar.hosting\/",
+    "docs_url": "https:\/\/hangar.hosting\/rotld"
   },
   "authors": [
     {
       "name": "Hangar Hosting",
-      "homepage": "https:\/\/www.whmcs.com\/"
+      "homepage": "https:\/\/hangar.hosting\/"
     }
   ]
 }

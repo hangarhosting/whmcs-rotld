@@ -85,6 +85,11 @@ class ApiClient {
 				// call rotld 'domain-info' for sent domain (verified OK)
 				$this->results = $this->syncDomainInfo($postfields);
 				break;
+			case 'GetWhoisInformation':
+				// call rotld 'domain-info' and get contact ID (CID)
+				// then call 'contact-info' and get contact details
+				$this->results = $this->getCID($postfields);
+				break;
 			default:
 				$this->results = array();
 		}
