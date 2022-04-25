@@ -696,27 +696,35 @@ function rotld_SaveNameservers($params) {
  *
  * @return array
  */
-function rotld_GetContactDetails($params)
-{
-    // user defined configuration values
-    $userIdentifier = $params['APIUsername'];
-    $apiKey = $params['APIKey'];
-    $testMode = $params['TestMode'];
-    $accountMode = $params['AccountMode'];
-    $emailPreference = $params['EmailPreference'];
+function rotld_GetContactDetails($params) {
 
+	// user defined configuration values
+	$userHost			= $params['RegistrarDomain'];
+	
+	// by default set LIVE user configuration values
+	$userIdentifier		= $params['APIUsername'];
+	$apiKey				= $params['APIKey'];
+	$apiURL				= $params['APIURL'];
+	$testMode			= $params['TestMode'];
+		
+	if ($testMode == 'on') {
+		$userIdentifier	= $params['APITestUsername'];
+		$apiKey			= $params['APITestKey'];
+		$apiURL			= $params['APITestURL'];
+	}
 
-    // domain parameters
-    $sld = $params['sld'];
-    $tld = $params['tld'];
+	// set domain info
+	$sld 				= $params['sld'];
+	$tld 				= $params['tld'];
 
-    // Build post data
-    $postfields = array(
-        'username' => $userIdentifier,
-        'password' => $apiKey,
-        'testmode' => $testMode,
-        'domain' => $sld . '.' . $tld,
-    );
+	// build post data
+	$postfields = array(
+		'hostname'			=> $userHost,		
+		'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+		'apiurl'			=> $apiURL,
+		'domain'			=> $sld.'.'.$tld,
+	);
 
     try {
         $api = new ApiClient();
@@ -724,60 +732,60 @@ function rotld_GetContactDetails($params)
 
         return array(
             'Registrant' => array(
-                'First Name' => $api->getFromResponse('registrant.firstname'),
-                'Last Name' => $api->getFromResponse('registrant.lastname'),
+                'First Name' => $api->getFromResponse('name'),
+                'Last Name' => $api->getFromResponse('name'),
                 'Company Name' => $api->getFromResponse('registrant.company'),
-                'Email Address' => $api->getFromResponse('registrant.email'),
-                'Address 1' => $api->getFromResponse('registrant.address1'),
-                'Address 2' => $api->getFromResponse('registrant.address2'),
-                'City' => $api->getFromResponse('registrant.city'),
-                'State' => $api->getFromResponse('registrant.state'),
-                'Postcode' => $api->getFromResponse('registrant.postcode'),
-                'Country' => $api->getFromResponse('registrant.country'),
-                'Phone Number' => $api->getFromResponse('registrant.phone'),
-                'Fax Number' => $api->getFromResponse('registrant.fax'),
+                'Email Address' => $api->getFromResponse('email'),
+                'Address 1' => $api->getFromResponse('address1'),
+                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                'City' => $api->getFromResponse('city'),
+                'State' => $api->getFromResponse('state_province'),
+                'Postcode' => $api->getFromResponse('postal_code'),
+                'Country' => $api->getFromResponse('country_code'),
+                'Phone Number' => $api->getFromResponse('phone'),
+                'Fax Number' => $api->getFromResponse('fax'),
             ),
             'Technical' => array(
-                'First Name' => $api->getFromResponse('tech.firstname'),
-                'Last Name' => $api->getFromResponse('tech.lastname'),
-                'Company Name' => $api->getFromResponse('tech.company'),
-                'Email Address' => $api->getFromResponse('tech.email'),
-                'Address 1' => $api->getFromResponse('tech.address1'),
-                'Address 2' => $api->getFromResponse('tech.address2'),
-                'City' => $api->getFromResponse('tech.city'),
-                'State' => $api->getFromResponse('tech.state'),
-                'Postcode' => $api->getFromResponse('tech.postcode'),
-                'Country' => $api->getFromResponse('tech.country'),
-                'Phone Number' => $api->getFromResponse('tech.phone'),
-                'Fax Number' => $api->getFromResponse('tech.fax'),
+                'First Name' => $api->getFromResponse('name'),
+                'Last Name' => $api->getFromResponse('name'),
+                'Company Name' => $api->getFromResponse('registrant.company'),
+                'Email Address' => $api->getFromResponse('email'),
+                'Address 1' => $api->getFromResponse('address1'),
+                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                'City' => $api->getFromResponse('city'),
+                'State' => $api->getFromResponse('state_province'),
+                'Postcode' => $api->getFromResponse('postal_code'),
+                'Country' => $api->getFromResponse('country_code'),
+                'Phone Number' => $api->getFromResponse('phone'),
+                'Fax Number' => $api->getFromResponse('fax'),
             ),
             'Billing' => array(
-                'First Name' => $api->getFromResponse('billing.firstname'),
-                'Last Name' => $api->getFromResponse('billing.lastname'),
-                'Company Name' => $api->getFromResponse('billing.company'),
-                'Email Address' => $api->getFromResponse('billing.email'),
-                'Address 1' => $api->getFromResponse('billing.address1'),
-                'Address 2' => $api->getFromResponse('billing.address2'),
-                'City' => $api->getFromResponse('billing.city'),
-                'State' => $api->getFromResponse('billing.state'),
-                'Postcode' => $api->getFromResponse('billing.postcode'),
-                'Country' => $api->getFromResponse('billing.country'),
-                'Phone Number' => $api->getFromResponse('billing.phone'),
-                'Fax Number' => $api->getFromResponse('billing.fax'),
+                'First Name' => $api->getFromResponse('name'),
+                'Last Name' => $api->getFromResponse('name'),
+                'Company Name' => $api->getFromResponse('registrant.company'),
+                'Email Address' => $api->getFromResponse('email'),
+                'Address 1' => $api->getFromResponse('address1'),
+                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                'City' => $api->getFromResponse('city'),
+                'State' => $api->getFromResponse('state_province'),
+                'Postcode' => $api->getFromResponse('postal_code'),
+                'Country' => $api->getFromResponse('country_code'),
+                'Phone Number' => $api->getFromResponse('phone'),
+                'Fax Number' => $api->getFromResponse('fax'),
             ),
             'Admin' => array(
-                'First Name' => $api->getFromResponse('admin.firstname'),
-                'Last Name' => $api->getFromResponse('admin.lastname'),
-                'Company Name' => $api->getFromResponse('admin.company'),
-                'Email Address' => $api->getFromResponse('admin.email'),
-                'Address 1' => $api->getFromResponse('admin.address1'),
-                'Address 2' => $api->getFromResponse('admin.address2'),
-                'City' => $api->getFromResponse('admin.city'),
-                'State' => $api->getFromResponse('admin.state'),
-                'Postcode' => $api->getFromResponse('admin.postcode'),
-                'Country' => $api->getFromResponse('admin.country'),
-                'Phone Number' => $api->getFromResponse('admin.phone'),
-                'Fax Number' => $api->getFromResponse('admin.fax'),
+                'First Name' => $api->getFromResponse('name'),
+                'Last Name' => $api->getFromResponse('name'),
+                'Company Name' => $api->getFromResponse('registrant.company'),
+                'Email Address' => $api->getFromResponse('email'),
+                'Address 1' => $api->getFromResponse('address1'),
+                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                'City' => $api->getFromResponse('city'),
+                'State' => $api->getFromResponse('state_province'),
+                'Postcode' => $api->getFromResponse('postal_code'),
+                'Country' => $api->getFromResponse('country_code'),
+                'Phone Number' => $api->getFromResponse('phone'),
+                'Fax Number' => $api->getFromResponse('fax'),
             ),
         );
 
@@ -1115,7 +1123,7 @@ function rotld_GetRegistrarLock($params) {
 		} else {
 		return 'unlocked';
 		}
-
+			return 'locked';
 	} catch (\Exception $e) {
 		return array(
 		'error' => $e->getMessage(),

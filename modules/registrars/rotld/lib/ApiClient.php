@@ -6,10 +6,14 @@ namespace WHMCS\Module\Registrar\rotld;
 /**
  * RoTLD Registrar API Client.
  * A simple API Client for communicating with an external API endpoint.
+ *
+ * version 0.1
+ *
  */
 class ApiClient {
-	protected $results = array();
+	protected $results	= array();
 	private $params;
+	private $cid;
 
 	/** Make external API call to registrar API.
 	 *
@@ -47,28 +51,33 @@ class ApiClient {
 				break;
 			case 'GetLockStatus':
 				// locking not implemented at ROTLD, return 'unlocked' without error
-				$this->results = 'unlocked';
+				$this->results = 'locked';
 				break;
 			case 'SetLockStatus':
-				// locking not implemented at ROTLD, return error with explanatory message
+				// domain locking is not implemented at ROTLD, will return error with explanatory message
 				// TODO: implement translation of the error string
-				throw new \Exception('ROTLD does not support domain locking yet, so domain will remain unlocked');
+				//throw new \Exception('ROTLD does not support domain locking yet, so domain will remain unlocked');
+				break;
 			case 'EnableIDProtection':
 				// ID Protection not implemented at ROTLD, return error with explanatory message
 				// TODO: implement translation of the error string
 				throw new \Exception('ROTLD does not support domain ID Protection');
+				break;
 			case 'DisableIDProtection':
 				// ID Protection not implemented at ROTLD, return error with explanatory message
 				// TODO: implement translation of the error string
 				throw new \Exception('ROTLD does not support domain ID Protection');
+				break;
 			case 'ReleaseDomain':
 				// deletion not implemented at ROTLD, return error with explanatory message
 				// TODO: implement translation of the error string
 				throw new \Exception('Function not supported');
+				break;
 			case 'DeleteDomain':
 				// deletion not implemented at ROTLD, return error with explanatory message
 				// TODO: implement translation of the error string
 				throw new \Exception('ROTLD does not support domain deletion');
+				break;
 			case 'RegisterNameserver':
 				// call rotld 'nameserver-create' for sent domain
 				$this->results = $this->createNameServer($postfields);
@@ -88,7 +97,7 @@ class ApiClient {
 			case 'GetWhoisInformation':
 				// call rotld 'domain-info' and get contact ID (CID)
 				// then call 'contact-info' and get contact details
-				$this->results = $this->getCID($postfields);
+				$this->results		= $this->getContact($postfields);
 				break;
 			default:
 				$this->results = array();
@@ -537,6 +546,111 @@ class ApiClient {
 		return $result;
 	}
 
+	/** 
+	 * Get contact data from domain-info ROTLD command.
+	 *
+	 * @param array $postfields
+	 *
+	 * @return array
+	 */
+	public function getContact($postfields) {
+		$this->params['host']		= $postfields['hostname'];
+		$this->params['login']		= $postfields['username'];
+		$this->params['password']	= $postfields['password'];
+		$this->params['apiurl']		= $postfields['apiurl'];
+
+		$this->params['vars']		= array (
+										'command'	=> 'domain-info',
+										'domain'	=> $postfields['domain'],
+									);
+
+		$ch = new CurlRequest();
+		$ch->init($this->params);
+		$curl_response = $ch->exec();
+
+		if ($curl_response['http_code']!='200') {
+			switch ($curl_response['http_code']){
+				case '401':
+					throw new \Exception("Authentication Failure 01. Invalid credentials.");
+					break;
+				case '500':
+					throw new \Exception("Service not available - 500");
+					break;
+				default:
+					throw new \Exception("Service not available.");
+			}
+		}
+		if (!$curl_response['body'])	throw new \Exception("Invalid response from server");
+
+		$response_array = $this->processResponse($curl_response['body']);
+		
+		// we assume domain exists and is managed by this registrar
+		// ToDo 
+		// add better processing of returned codes
+		
+		// first we take Manhattan, than we take Berlin
+		// we need the CID from the domain-info, then we use it to get contact data
+		// ROTLD developers seem to have twisted logic
+		
+		switch ($response_array['result_code']) {
+				case '00200':
+					$this->params['vars']	= array (
+											'command'	=> 'contact-info',
+											'cid'		=> $response_array['data']['registrant_id'],
+											);
+					break;
+				default:
+					throw new \Exception($response_array['result_code'].' '.$response_array['result_message']);
+		}
+		
+		// now that we have the CID, get contact data
+		$ch = new CurlRequest();
+		$ch->init($this->params);
+		$curl_response = $ch->exec();
+
+		if ($curl_response['http_code']!='200') {
+			switch ($curl_response['http_code']){
+				case '401':
+					throw new \Exception("Authentication Failure. Invalid credentials.");
+					break;
+				case '500':
+					throw new \Exception("Service not available - 500");
+					break;
+				default:
+					throw new \Exception("Service not available.");
+			}
+		}
+		if (!$curl_response['body'])	throw new \Exception("Invalid response from server");
+
+		$response_array = $this->processResponse($curl_response['body']);
+		
+		// we assume domain exists and is managed by this registrar
+		// ToDo 
+		// add better processing of returned codes
+		switch ($response_array['result_code']) {
+			case '00200':
+				$result = array(
+							'fax' 				=> $response_array['data']['fax'],
+							'address1'			=> $response_array['data']['address1'],
+							'address2'			=> $response_array['data']['address2'],
+							'address3'			=> $response_array['data']['address3'],
+							'phone'				=> $response_array['data']['phone'],
+							'postal_code'		=> $response_array['data']['postal_code'],
+							'country_code'		=> $response_array['data']['country_code'],
+							'state_province'	=> $response_array['data']['state_province'],
+							'city'				=> $response_array['data']['city'],
+							'name'				=> $response_array['data']['name'],
+							'person_type'		=> $response_array['data']['person_type'],
+							'email'				=> $response_array['data']['email'],
+						);
+				break;
+			default:
+				throw new \Exception($response_array['result_code'].' '.$response_array['result_message']);
+		}
+		return $result;
+	}
+
+
 }
 
 
@@ -605,12 +719,8 @@ class RotldApiClient {
 	}
 }
 
-
-
 class CurlRequest {
 
-	// const API_URL = 'https://rest.rotld.ro:6080';
-	// API_URL = 'https://rest2-test.rotld.ro:6080';
 	private $ch;
 	
 	public function init($params) {
@@ -632,7 +742,7 @@ class CurlRequest {
 		@curl_setopt($this->ch, CURLOPT_HTTPHEADER, $header);
 		@curl_setopt($this->ch, CURLOPT_POST, true);
 		@curl_setopt($this->ch, CURLOPT_POSTFIELDS, http_build_query($params['vars']));
-		//@curl_setopt($this->ch, CURLOPT_URL, self::API_URL);
+
 		@curl_setopt($this->ch, CURLOPT_URL, $apiurl);
 		
 		@curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, 0);
@@ -644,13 +754,14 @@ class CurlRequest {
 	}
 
 	public function exec() {
-		$response = curl_exec($this->ch);
-		$error = curl_error($this->ch);
-		$result = array( 'header' => '',
-					'body' => '',
-					'curl_error' => '',
-					'http_code' => '',
-					'last_url' => '');
+		$response	= curl_exec($this->ch);
+		$error		= curl_error($this->ch);
+		$result		= array( 'header' => '',
+						'body' => '',
+						'curl_error' => '',
+						'http_code' => '',
+						'last_url' => ''
+						);
 		curl_close($ch);
 
 		if ( $error != "" ) {
@@ -666,6 +777,8 @@ class CurlRequest {
 
 		return $result;
 	}
+	
+	
 }
 
 
