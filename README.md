@@ -12,6 +12,20 @@
  Although tested, the module is not yet ready for production.
  It has basic functionalities, but still requires a lot of work.
 
+#### What is working
+- installation
+- configuration (including test mode toggle)
+- following commands have been tested and seem to work OK
+	- `RenewDomain`
+	- `GetNameservers`
+	- `SaveNameservers`
+	- `GetContactDetails`
+	- `RegisterNameserver`
+	- `ModifyNameserver`
+	- `DeleteNameserver`
+	- `Sync`
+
+
 
 ### Installation
 
@@ -22,7 +36,7 @@ you have all necessary credentials at hand.
 If you are not yet a partner, please stop this installation and go to
 https://rotld.ro/partnership/. Finish the partnership process and come back.
 
-
+#### Installation procedure
 1. Connect to your WHMCS instance via SSH
 2. Clone the repository in a temporary folder (use any folder suits you)
 ```
