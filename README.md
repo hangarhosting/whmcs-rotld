@@ -20,8 +20,7 @@ We assume that you already are a ROTLD partner and
 you have all necessary credentials at hand.
 
 If you are not yet a partner, please stop this installation and go to
-[ROTLD Partnership page]https://rotld.ro/partnership/.
-Finish the partnership process and come back.
+https://rotld.ro/partnership/. Finish the partnership process and come back.
 
 
 1. Connect to your WHMCS instance via SSH
@@ -35,3 +34,4 @@ git clone https://github.com/hangarhosting/whmcs-rotld.git
 5. Go to *System settings* > *Domain Registrars*
 6. Look for ROTLD registrar and click *Activate*
 7. After activation, click *Configure* and enter the required info
+8. Go to *Domain Pricing* and for all romanian TLDs (.ro, .com.ro, .org.ro, .tm.ro, etc) choose **Rotld** as registrar in the last column - *Auto Registration*.
