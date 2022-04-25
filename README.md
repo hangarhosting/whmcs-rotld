@@ -22,3 +22,6 @@ cd /tmp
 git clone https://github.com/hangarhosting/whmcs-rotld.git
 ```
 3. Copy the content of `whmcs-rotld` folder into your WHMCS instance (folders `modules` and `widgets`)
+4. Browse to your WHMCS admin dashboard
+5. Go to *System settings* > *Domain Registrars*
+6. Look for ROTLD registrar and click *Activate*
