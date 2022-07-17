@@ -1,7 +1,7 @@
 # whmcs-rotld
  ROTLD registrar module for WHMCS
  
- Developed with passion in https://hangar.hosting labs.
+ Developed with passion in https://hangar.hosting labs, based on standard documentation from https://developers.whmcs.com/domain-registrars/
  
  Please note that you must be a registered and active ROTLD partner in order to
  use this module.
