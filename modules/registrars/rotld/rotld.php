@@ -132,7 +132,6 @@ function rotld_getConfigArray() {
 /** 
  *	Operational functions
  */
-
 function rotld_CheckBalance($params) {
 
 	/** ###############  */
@@ -555,7 +554,7 @@ function rotld_RenewDomain($params) {
     }
 }
 
-/** seems OK
+/** OK
  * Fetch current nameservers.
  *
  * This function should return an array of nameservers for a given domain.
@@ -617,7 +616,7 @@ function rotld_GetNameservers($params) {
     }
 }
 
-/** seems OK
+/** OK
  * Save nameserver changes.
  *
  * This function should submit a change of nameservers request to the
@@ -809,8 +808,7 @@ function rotld_GetContactDetails($params) {
  *
  * @return array
  */
-function rotld_SaveContactDetails($params)
-{
+function rotld_SaveContactDetails($params) {
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -894,8 +892,7 @@ function rotld_SaveContactDetails($params)
  *
  * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
  */
-function rotld_CheckAvailability($params)
-{
+function rotld_CheckAvailability($params) {
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -1003,8 +1000,7 @@ function rotld_DomainSuggestionOptions() {
  *
  * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
  */
-function rotld_GetDomainSuggestions($params)
-{
+function rotld_GetDomainSuggestions($params) {
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -1073,7 +1069,7 @@ function rotld_GetDomainSuggestions($params)
     }
 }
 
-/** seems OK
+/** OK
  * Get registrar lock status.
  *
  * Also known as Domain Lock or Transfer Lock status.
@@ -1134,7 +1130,7 @@ function rotld_GetRegistrarLock($params) {
 }
 
 
-/** seems OK
+/** OK
  * Set registrar lock status.
  *
  * @param array $params common module parameters
@@ -1376,8 +1372,7 @@ function rotld_IDProtectToggle($params) {
  * @return array
  *
  */
-function rotld_GetEPPCode($params)
-{
+function rotld_GetEPPCode($params) {
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -1793,8 +1788,7 @@ function rotld_Sync($params) {
  *
  * @return array
  */
-function rotld_TransferSync($params)
-{
+function rotld_TransferSync($params) {
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -1849,8 +1843,7 @@ function rotld_TransferSync($params)
  *
  * @return array
  */
-function rotld_ClientAreaCustomButtonArray()
-{
+function rotld_ClientAreaCustomButtonArray() {
     return array(
         // 'Check Balance' => 'CheckBalance',
     );
@@ -1864,8 +1857,7 @@ function rotld_ClientAreaCustomButtonArray()
  *
  * @return array
  */
-function rotld_ClientAreaAllowedFunctions()
-{
+function rotld_ClientAreaAllowedFunctions() {
     return array(
         // 'Check Balance' => 'CheckBalance',
     );
@@ -1880,8 +1872,7 @@ function rotld_ClientAreaAllowedFunctions()
  *
  * @return array
  */
-function rotld_push($params)
-{
+function rotld_push($params) {
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -1910,8 +1901,7 @@ function rotld_push($params)
  *
  * @return string HTML Output
  */
-function rotld_ClientArea($params)
-{
+function rotld_ClientArea($params) {
     $output = '
         <div class="alert alert-info">
             Your custom HTML output goes here...

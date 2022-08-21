@@ -186,7 +186,7 @@ class ApiClient {
 		return $result;
 	}
 
-	/** seems OK
+	/** OK
 	 * Renew domain via  ROTLD command.
 	 *
 	 * @param array $postfields
@@ -237,7 +237,7 @@ class ApiClient {
 		return $result;
 	}
 
-	/** seems OK
+	/** OK
 	 * Get nameservers from domain-info ROTLD command.
 	 *
 	 * @param array $postfields
@@ -295,7 +295,7 @@ class ApiClient {
 		return $result;
 	}
 
-	/** seems OK
+	/** OK
 	 * Set nameservers using domain-reset-ns ROTLD command.
 	 *
 	 * @param array $postfields
@@ -343,7 +343,7 @@ class ApiClient {
 		return $response_array;	// we do not process data from here
 	}
 	
-	/** seems OK
+	/** OK
 	 * Create a nameserver for a domain using nameserver-create ROTLD command.
 	 *
 	 * @param array $postfields
@@ -391,7 +391,7 @@ class ApiClient {
 		return $response_array;	// we do not process data from here
 	}
 
-	/** seems OK
+	/** OK
 	 * modify an existing private nameserver for a domain using nameserver-update ROTLD command.
 	 *
 	 * @param array $postfields
@@ -442,7 +442,7 @@ class ApiClient {
 		return $response_array;	// we do not process data from here
 	}
 
-	/** seems OK
+	/** OK
 	 * delete an existing private nameserver for a domain using nameserver-delete ROTLD command.
 	 *
 	 * @param array $postfields
@@ -489,7 +489,7 @@ class ApiClient {
 		return $response_array;	// we do not process data from here
 	}
 
-	/**
+	/** done, needs verification
 	 * Get nameservers from domain-info ROTLD command.
 	 *
 	 * @param array $postfields
@@ -528,7 +528,8 @@ class ApiClient {
 		$response_array = $this->processResponse($curl_response['body']);
 		
 		// we assume domain exists and is managed by this registrar
-		// ToDo 
+		// if we get the specific code 1002 - set transfered away to true
+		// ToDo
 		// add better processing of returned codes
 		
 		switch ($response_array['result_code']) {
@@ -537,9 +538,16 @@ class ApiClient {
 								'expirydate' 		=> $response_array['data']['expiration_date'],
 								'active'			=> $response_array['data']['statuses'][0],
 								'expired'			=> $response_array['data']['deletion_date'],
-								'transferredaway'	=> '',
+								'transferredaway'	=> FALSE,
 					);
 					break;
+				case '10002':
+					$result = array (
+								'expirydate' 		=> '',
+								'active'			=> '',
+								'expired'			=> '',
+								'transferredaway'	=> TRUE,
+					);
 				default:
 					throw new \Exception($response_array['result_code'].' '.$response_array['result_message']);
 		}
@@ -780,7 +788,3 @@ class CurlRequest {
 	
 	
 }
-
-
-
-
