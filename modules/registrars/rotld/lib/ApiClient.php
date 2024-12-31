@@ -155,13 +155,13 @@ class ApiClient {
 	 * @return array
 	 */
 	public function checkBalance($postfields) {
-		$this->params['host']		= $postfields['hostname'];
 		$this->params['login']		= $postfields['username'];
 		$this->params['password']	= $postfields['password'];
+		$this->params['apiurl']		= $postfields['apiurl'];
 		$this->params['vars']		= array (
 										'command' => 'check-balance',
-										);
-
+									);
+									
 		$ch = new CurlRequest();
 		$ch->init($this->params);
 		$curl_response = $ch->exec();

@@ -41,8 +41,8 @@ class RoTLDWidget extends \WHMCS\Module\AbstractWidget {
 	$apiKey		= 'password';
 
 	// uncomment live credentials for displaying the live data
-	// $userIdentifier	= 'userLive';
-	// $apiKey		= 'password';
+	// $userIdentifier	= 'rotest';
+	// $apiKey		= 'rotest';
 
 	// use your host here
 	$userHost	= 'my.host.tld';
