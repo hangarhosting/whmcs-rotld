@@ -17,7 +17,7 @@ use WHMCS\Domains\DomainLookup\SearchResult;
 use WHMCS\Module\Registrar\rotld\ApiClient;
 
 
-/** OK
+/** rotld_MetaData() is OK
  * Define module related metadata
  *
  * Provide some module information including the display name and API Version to
@@ -33,7 +33,7 @@ function rotld_MetaData() {
     );
 }
 
-/** OK
+/** rotld_getConfigArray() is OK
  * Define registrar configuration options.
  *
  * The values you return here define what configuration options
@@ -92,7 +92,7 @@ function rotld_getConfigArray() {
 			'FriendlyName' => 'Live API URL',
 			'Type' => 'text',
 			'Size' => '20',
-			'Default' => 'https://rest.rotld.ro:6080',
+			'Default' => 'https://rest2.rotld.ro:6080',
 			'Description' => 'Live URL:port for RoTLD API (do not change unless required by ROTLD)',
 		],
 		// Your Registrar ID for the test environment

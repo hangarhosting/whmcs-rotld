@@ -108,11 +108,11 @@ class ApiClient {
 			$action,
 			$postfields,
 			$response,
-			$this->results,
-			array(
-				$postfields['username'],
-				$postfields['password'],
-			)
+			$this->results
+//			array(
+//				$postfields['username'],
+//				$postfields['password'],
+//			)
 		);
 
 		if ($this->results === null && json_last_error() !== JSON_ERROR_NONE) {
@@ -161,7 +161,6 @@ class ApiClient {
 		$this->params['vars']		= array (
 										'command' => 'check-balance',
 									);
-									
 		$ch = new CurlRequest();
 		$ch->init($this->params);
 		$curl_response = $ch->exec();
@@ -188,9 +187,7 @@ class ApiClient {
 
 	/** OK
 	 * Renew domain via  ROTLD command.
-	 *
 	 * @param array $postfields
-	 *
 	 * @return array
 	 */
 	public function renewDomain($postfields) {
@@ -204,10 +201,7 @@ class ApiClient {
 										'domain'		=> $postfields['domain'],
 										'domain_period'	=> $postfields['period'],
 									);
-		// throw new \Exception($this->params['vars']['domain_period']);
-		
 		$ch = new CurlRequest();
-		
 		$ch->init($this->params);
 		$curl_response = $ch->exec();
 
@@ -224,7 +218,6 @@ class ApiClient {
 			}
 		}
 		if (!$curl_response['body'])	throw new \Exception("Invalid response from server");
-
 		$response_array = $this->processResponse($curl_response['body']);
 		
 		switch ($response_array['result_code']) {
@@ -239,9 +232,7 @@ class ApiClient {
 
 	/** OK
 	 * Get nameservers from domain-info ROTLD command.
-	 *
 	 * @param array $postfields
-	 *
 	 * @return array
 	 */
 	public function getNameServersFromDomainInfo($postfields) {
@@ -258,7 +249,6 @@ class ApiClient {
 		$ch = new CurlRequest();
 		$ch->init($this->params);
 		$curl_response = $ch->exec();
-
 		if ($curl_response['http_code']!='200') {
 			switch ($curl_response['http_code']){
 				case '401':
@@ -297,9 +287,7 @@ class ApiClient {
 
 	/** OK
 	 * Set nameservers using domain-reset-ns ROTLD command.
-	 *
 	 * @param array $postfields
-	 *
 	 * @return array
 	 */
 	public function setNameServersFromDomainInfo($postfields) {
@@ -314,7 +302,6 @@ class ApiClient {
 										'nameservers'	=> $postfields['nameservers'],
 									);
 		$ch = new CurlRequest();
-
 		$ch->init($this->params);
 		$curl_response = $ch->exec();
 		if ($curl_response['http_code']!='200') {
@@ -444,9 +431,7 @@ class ApiClient {
 
 	/** OK
 	 * delete an existing private nameserver for a domain using nameserver-delete ROTLD command.
-	 *
 	 * @param array $postfields
-	 *
 	 * @return array
 	 */
 	public function deleteNameServer($postfields) {
@@ -460,7 +445,6 @@ class ApiClient {
 										'nameserver'	=> $postfields['nameserver'],
 									);
 		$ch = new CurlRequest();
-
 		$ch->init($this->params);
 		$curl_response = $ch->exec();
 		if ($curl_response['http_code']!='200') {
@@ -489,11 +473,9 @@ class ApiClient {
 		return $response_array;	// we do not process data from here
 	}
 
-	/** done, needs verification
+	/** OK
 	 * Get nameservers from domain-info ROTLD command.
-	 *
 	 * @param array $postfields
-	 *
 	 * @return array
 	 */
 	public function syncDomainInfo($postfields) {
@@ -501,7 +483,6 @@ class ApiClient {
 		$this->params['login']		= $postfields['username'];
 		$this->params['password']	= $postfields['password'];
 		$this->params['apiurl']		= $postfields['apiurl'];
-
 		$this->params['vars']		= array (
 										'command'	=> 'domain-info',
 										'domain'	=> $postfields['domain'],
@@ -510,7 +491,6 @@ class ApiClient {
 		$ch = new CurlRequest();
 		$ch->init($this->params);
 		$curl_response = $ch->exec();
-
 		if ($curl_response['http_code']!='200') {
 			switch ($curl_response['http_code']){
 				case '401':
