@@ -1,82 +1,77 @@
 <?php
 
 
-/** OK
+/**
  * WHMCS Registrar Module for ROTLD
+ *
  * Registrar Modules allow you to create modules that allow for domain
  * registration, management, transfers, and other functionality within
  * WHMCS.
- *
  */
 if (!defined("WHMCS")) {
-    die("This file cannot be accessed directly");
+	die("This file cannot be accessed directly");
 }
 
+// Use some specific namespaces
 use WHMCS\Domains\DomainLookup\ResultsList;
 use WHMCS\Domains\DomainLookup\SearchResult;
 use WHMCS\Module\Registrar\rotld\ApiClient;
 
 
-/** rotld_MetaData() is OK
- * Define module related metadata
+function rotld_MetaData() {
+/**
+ * function to define module related metadata
  *
- * Provide some module information including the display name and API Version to
- * determine the method of decoding the input values.
+ * the function provides module info, including the display name and
+ * the API version.
  *
  * @return array
+ *
  */
-function rotld_MetaData() {
-    return array(
-        'DisplayName'	=> 'ROTLD',
-        'Description'	=> 'Description',
-        'APIVersion'	=> '1.1',
-    );
+	return array (
+		'DisplayName'	=> 'ROTLD',
+		'Description'	=> 'Description',
+		'APIVersion'	=> '1.1',
+	);
 }
 
-/** rotld_getConfigArray() is OK
- * Define registrar configuration options.
+function rotld_getConfigArray() {
+/**
+ * function to define the registrar configuration options.
  *
- * The values you return here define what configuration options
+ * the values returned here will define what configuration options
  * we store for the module. These values are made available to
  * each module function.
  *
- * You can store an unlimited number of configuration settings.
- * The following field types are supported:
- *  * Text
- *  * Password
- *  * Yes/No Checkboxes
- *  * Dropdown Menus
- *  * Radio Buttons
- *  * Text Areas
+ * @see https://developers.whmcs.com/domain-registrars/config-options/
  *
  * @return array
  */
-function rotld_getConfigArray() {
 	return [
 		// Friendly display name for the module
 		'FriendlyName'	=> [
 			'Type'		=> 'System',
-			'Value'		=> 'ROTLD module for WHMCS',
+			'Value'		=> 'WHMCS module for ROTLD',
 		],
 		// Description
-		'Description'	=> [
-			'Type' => 'System',
-			'Value' => 'WHMCS module for managing Romanian domains; developed under GPLv3 license by Hangar Hosting - https://hangar.hosting',
+		'Description'   => [
+			'Type'      => 'System',
+			'Value'     => 'WHMCS registrar module for managing Romanian domains; developed under GPLv3 license by Hangar Hosting - https://hangar.hosting',
 		],
 		// Your registrar URL, as registered at ROTLD
 		'RegistrarDomain' => [
 			'FriendlyName' => 'Registrar domain',
 			'Type' => 'text',
 			'Size' => '20',
-			'Default' => 'my.hangar.hosting',
-			'Description' => 'Registrar domain (without https://)',
+			'Default' => 'my.whmcs.domain',
+			'Description' => 'Your registrar domain (DO NOT include https://)',
 		],
 		// Your Registrar ID for the live environment
 		'APIUsername' => [
 			'FriendlyName' => 'Live username (RegID)',
 			'Type' => 'text',
 			'Size' => '20',
-			'Default' => 'HangarHosting',
+			'Default' => 'myRoTLDLiveRegID',
 			'Description' => 'RegID for LIVE environment (provided by ROTLD)',
 		],
 		// Your registrar password for the live environment
@@ -93,14 +88,14 @@ function rotld_getConfigArray() {
 			'Type' => 'text',
 			'Size' => '20',
 			'Default' => 'https://rest2.rotld.ro:6080',
-			'Description' => 'Live URL:port for RoTLD API (do not change unless required by ROTLD)',
+			'Description' => 'Live URL:port for RoTLD API (do not change unless you know what you are doing)',
 		],
 		// Your Registrar ID for the test environment
 		'APITestUsername' => [
 			'FriendlyName' => 'Test username (RegID)',
 			'Type' => 'text',
 			'Size' => '22',
-			'Default' => 'HangarHostingT',
+			'Default' => 'myRoTLDTestRegID',
 			'Description' => 'RegID for TEST environment (provided by ROTLD)',
 		],
 		// Your registrar password for the test environment
@@ -117,13 +112,13 @@ function rotld_getConfigArray() {
 			'Type' => 'text',
 			'Size' => '22',
 			'Default' => 'https://rest2-test.rotld.ro:6080',
-			'Description' => 'Test URL:port for RoTLD API (do not change unless required by ROTLD)',
+			'Description' => 'Test URL:port for RoTLD API (do not change unless you know what you are doing)',
 		],
 		// enable or disable test mode
 		'TestMode' => [
 			'FriendlyName' => 'Test Mode',
 			'Type' => 'yesno',
-			'Description' => 'Tick to enable',
+			'Description' => 'Tick to enable test mode',
 		],
     ];
 }
@@ -132,58 +127,25 @@ function rotld_getConfigArray() {
 /** 
  *	Operational functions
  */
-function rotld_CheckBalance($params) {
 
-	/** ###############  */
-	// user defined configuration values
-	$userHost = $params['RegistrarDomain'];
-	$userIdentifier	= $params['APIUsername'];
-	$apiKey		= $params['APIKey'];
-	$apiurl		= '';	// add API URL
-
-	// build post data
-	$postfields = array(
-        	'apiusr' => $userIdentifier,
-        	'apikey' => $apiKey,
-		'myhost' => $userHost,
-		'domain' => '',
-	);
-	/** ###############  */
-
-	try {
-        	$api = new ApiClient();
-        	$api->call('check_balance', $postfields);
-
-		return array(
-		'success' => true,
-	);
-
-	} catch (\Exception $e) {
-		return array(
-		'error' => $e->getMessage(),
-        );
-    }
-
-}
-
-
-/**
- * Register a domain.
- *
- * Attempt to register a domain with the domain registrar.
- *
- * This is triggered when the following events occur:
- * * Payment received for a domain registration order
- * * When a pending domain registration order is accepted
- * * Upon manual request by an admin user
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
 function rotld_RegisterDomain($params) {
+    /**
+     * Register a domain.
+     *
+     * Attempt to register a domain with the domain registrar.
+     *
+     * This is triggered when the following events occur:
+     * * Payment received for a domain registration order
+     * * When a pending domain registration order is accepted
+     * * Upon manual request by an admin user
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -329,23 +291,24 @@ function rotld_RegisterDomain($params) {
     }
 }
 
-/**
- * Initiate domain transfer.
- *
- * Attempt to create a domain transfer request for a given domain.
- *
- * This is triggered when the following events occur:
- * * Payment received for a domain transfer order
- * * When a pending domain transfer order is accepted
- * * Upon manual request by an admin user
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
 function rotld_TransferDomain($params) {
+    /**
+     * Initiate domain transfer.
+     *
+     * Attempt to create a domain transfer request for a given domain.
+     *
+     * This is triggered when the following events occur:
+     * * Payment received for a domain transfer order
+     * * When a pending domain transfer order is accepted
+     * * Upon manual request by an admin user
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -491,53 +454,55 @@ function rotld_TransferDomain($params) {
     }
 }
 
-/** OK
- * Renew a domain.
- *
- * Attempt to renew/extend a domain for a given number of years.
- *
- * This is triggered when the following events occur:
- * * Payment received for a domain renewal order
- * * When a pending domain renewal order is accepted
- * * Upon manual request by an admin user
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
 function rotld_RenewDomain($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
+    /** OK
+     * Renew a domain.
+     *
+     * Attempt to renew/extend a domain for a given number of years.
+     *
+     * This is triggered when the following events occur:
+     * * Payment received for a domain renewal order
+     * * When a pending domain renewal order is accepted
+     * * Upon manual request by an admin user
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
 
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
     $registrationPeriod = $params['regperiod'];
 
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
         'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-		'period'			=> $registrationPeriod,
-	);
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'period'			=> $registrationPeriod,
+    );
 
     try {
         $api = new ApiClient();
@@ -554,59 +519,71 @@ function rotld_RenewDomain($params) {
     }
 }
 
-/** OK
- * Fetch current nameservers.
- *
- * This function should return an array of nameservers for a given domain.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
+function rotld_GetDomainInformation($params) {
+    // not implemented
+}
+
+function rotld_GetEmailForwarding($params) {
+    // not implemented
+}
+
+function rotld_SaveEmailForwarding($params) {
+    // not implemented
+}
+
 function rotld_GetNameservers($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
+    /** OK
+     * Fetch current nameservers.
+     *
+     * This function should return an array of nameservers for a given domain.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
 
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
 
 
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
         'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
 
-	try {
-		$api = new ApiClient();
-		$api->call('GetNameservers',$postfields);
+    try {
+        $api = new ApiClient();
+        $api->call('GetNameservers',$postfields);
 
         return array(
             'success' => true,
             'ns1' => $api->getFromResponse('nameserver1'),
-            'ns2' => $api->getFromResponse('nameserver2'),
-            'ns3' => $api->getFromResponse('nameserver3'),
-            'ns4' => $api->getFromResponse('nameserver4'),
-            'ns5' => $api->getFromResponse('nameserver5'),
+                     'ns2' => $api->getFromResponse('nameserver2'),
+                     'ns3' => $api->getFromResponse('nameserver3'),
+                     'ns4' => $api->getFromResponse('nameserver4'),
+                     'ns5' => $api->getFromResponse('nameserver5'),
         );
 
     } catch (\Exception $e) {
@@ -616,56 +593,55 @@ function rotld_GetNameservers($params) {
     }
 }
 
-/** OK
- * Save nameserver changes.
- *
- * This function should submit a change of nameservers request to the
- * domain registrar.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
 function rotld_SaveNameservers($params) {
+    /**
+     * Save nameserver changes.
+     *
+     * This function should submit a change of nameservers request to the
+     * domain registrar.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
 
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
 
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
 
 
-	// submitted nameserver values
-	$nameservers = "";
-	if (isset($params['ns1']) && $params['ns1']!='') $nameservers .= 	$params['ns1'];
-	if (isset($params['ns2']) && $params['ns2']!='') $nameservers .= ','.	$params['ns2'];
-	if (isset($params['ns3']) && $params['ns3']!='') $nameservers .= ','.	$params['ns3'];
-	if (isset($params['ns4']) && $params['ns4']!='') $nameservers .= ','.	$params['ns4'];
-	if (isset($params['ns5']) && $params['ns5']!='') $nameservers .= ','.	$params['ns5'];
+    // submitted nameserver values
+    $nameservers = "";
+    if (isset($params['ns1']) && $params['ns1']!='') $nameservers .= 	$params['ns1'];
+    if (isset($params['ns2']) && $params['ns2']!='') $nameservers .= ','.	$params['ns2'];
+    if (isset($params['ns3']) && $params['ns3']!='') $nameservers .= ','.	$params['ns3'];
+    if (isset($params['ns4']) && $params['ns4']!='') $nameservers .= ','.	$params['ns4'];
+    if (isset($params['ns5']) && $params['ns5']!='') $nameservers .= ','.	$params['ns5'];
 
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
         'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-		'nameservers'		=> $nameservers,
-	);
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'nameservers'		=> $nameservers,
+    );
 
 
     try {
@@ -683,47 +659,162 @@ function rotld_SaveNameservers($params) {
     }
 }
 
-/**
- * Get the current WHOIS Contact Information.
- *
- * Should return a multi-level array of the contacts and name/address
- * fields that be modified.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_GetContactDetails($params) {
+function rotld_GetRegistrarLock($params) {
+    /** OK
+     * Get registrar lock status.
+     *
+     * Also known as Domain Lock or Transfer Lock status.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return string|array Lock status or error message
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
 
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
 
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
 
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
         'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('GetLockStatus', $postfields);
+
+        if ($api->getFromResponse('lockstatus') == 'locked') {
+            return 'locked';
+        } else {
+            return 'unlocked';
+        }
+        return 'locked';
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+
+
+}
+
+function rotld_SaveRegistrarLock($params) {
+    /** OK
+     * Set registrar lock status.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // lock status
+    $lockStatus = $params['lockenabled'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'registrarlock'		=> ($lockStatus == 'locked') ? 1 : 0,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('SetLockStatus', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_GetContactDetails($params) {
+    /**
+     * Get the current WHOIS Contact Information.
+     *
+     * Should return a multi-level array of the contacts and name/address
+     * fields that be modified.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
 
     try {
         $api = new ApiClient();
@@ -732,59 +823,59 @@ function rotld_GetContactDetails($params) {
         return array(
             'Registrant' => array(
                 'First Name' => $api->getFromResponse('name'),
-                'Last Name' => $api->getFromResponse('name'),
-                'Company Name' => $api->getFromResponse('registrant.company'),
-                'Email Address' => $api->getFromResponse('email'),
-                'Address 1' => $api->getFromResponse('address1'),
-                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
-                'City' => $api->getFromResponse('city'),
-                'State' => $api->getFromResponse('state_province'),
-                'Postcode' => $api->getFromResponse('postal_code'),
-                'Country' => $api->getFromResponse('country_code'),
-                'Phone Number' => $api->getFromResponse('phone'),
-                'Fax Number' => $api->getFromResponse('fax'),
+                                  'Last Name' => $api->getFromResponse('name'),
+                                  'Company Name' => $api->getFromResponse('registrant.company'),
+                                  'Email Address' => $api->getFromResponse('email'),
+                                  'Address 1' => $api->getFromResponse('address1'),
+                                  'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                                  'City' => $api->getFromResponse('city'),
+                                  'State' => $api->getFromResponse('state_province'),
+                                  'Postcode' => $api->getFromResponse('postal_code'),
+                                  'Country' => $api->getFromResponse('country_code'),
+                                  'Phone Number' => $api->getFromResponse('phone'),
+                                  'Fax Number' => $api->getFromResponse('fax'),
             ),
             'Technical' => array(
                 'First Name' => $api->getFromResponse('name'),
-                'Last Name' => $api->getFromResponse('name'),
-                'Company Name' => $api->getFromResponse('registrant.company'),
-                'Email Address' => $api->getFromResponse('email'),
-                'Address 1' => $api->getFromResponse('address1'),
-                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
-                'City' => $api->getFromResponse('city'),
-                'State' => $api->getFromResponse('state_province'),
-                'Postcode' => $api->getFromResponse('postal_code'),
-                'Country' => $api->getFromResponse('country_code'),
-                'Phone Number' => $api->getFromResponse('phone'),
-                'Fax Number' => $api->getFromResponse('fax'),
+                                 'Last Name' => $api->getFromResponse('name'),
+                                 'Company Name' => $api->getFromResponse('registrant.company'),
+                                 'Email Address' => $api->getFromResponse('email'),
+                                 'Address 1' => $api->getFromResponse('address1'),
+                                 'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                                 'City' => $api->getFromResponse('city'),
+                                 'State' => $api->getFromResponse('state_province'),
+                                 'Postcode' => $api->getFromResponse('postal_code'),
+                                 'Country' => $api->getFromResponse('country_code'),
+                                 'Phone Number' => $api->getFromResponse('phone'),
+                                 'Fax Number' => $api->getFromResponse('fax'),
             ),
             'Billing' => array(
                 'First Name' => $api->getFromResponse('name'),
-                'Last Name' => $api->getFromResponse('name'),
-                'Company Name' => $api->getFromResponse('registrant.company'),
-                'Email Address' => $api->getFromResponse('email'),
-                'Address 1' => $api->getFromResponse('address1'),
-                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
-                'City' => $api->getFromResponse('city'),
-                'State' => $api->getFromResponse('state_province'),
-                'Postcode' => $api->getFromResponse('postal_code'),
-                'Country' => $api->getFromResponse('country_code'),
-                'Phone Number' => $api->getFromResponse('phone'),
-                'Fax Number' => $api->getFromResponse('fax'),
+                               'Last Name' => $api->getFromResponse('name'),
+                               'Company Name' => $api->getFromResponse('registrant.company'),
+                               'Email Address' => $api->getFromResponse('email'),
+                               'Address 1' => $api->getFromResponse('address1'),
+                               'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                               'City' => $api->getFromResponse('city'),
+                               'State' => $api->getFromResponse('state_province'),
+                               'Postcode' => $api->getFromResponse('postal_code'),
+                               'Country' => $api->getFromResponse('country_code'),
+                               'Phone Number' => $api->getFromResponse('phone'),
+                               'Fax Number' => $api->getFromResponse('fax'),
             ),
             'Admin' => array(
                 'First Name' => $api->getFromResponse('name'),
-                'Last Name' => $api->getFromResponse('name'),
-                'Company Name' => $api->getFromResponse('registrant.company'),
-                'Email Address' => $api->getFromResponse('email'),
-                'Address 1' => $api->getFromResponse('address1'),
-                'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
-                'City' => $api->getFromResponse('city'),
-                'State' => $api->getFromResponse('state_province'),
-                'Postcode' => $api->getFromResponse('postal_code'),
-                'Country' => $api->getFromResponse('country_code'),
-                'Phone Number' => $api->getFromResponse('phone'),
-                'Fax Number' => $api->getFromResponse('fax'),
+                             'Last Name' => $api->getFromResponse('name'),
+                             'Company Name' => $api->getFromResponse('registrant.company'),
+                             'Email Address' => $api->getFromResponse('email'),
+                             'Address 1' => $api->getFromResponse('address1'),
+                             'Address 2' => $api->getFromResponse('address2') . ' ' . $api->getFromResponse('address3'),
+                             'City' => $api->getFromResponse('city'),
+                             'State' => $api->getFromResponse('state_province'),
+                             'Postcode' => $api->getFromResponse('postal_code'),
+                             'Country' => $api->getFromResponse('country_code'),
+                             'Phone Number' => $api->getFromResponse('phone'),
+                             'Fax Number' => $api->getFromResponse('fax'),
             ),
         );
 
@@ -795,20 +886,20 @@ function rotld_GetContactDetails($params) {
     }
 }
 
-/**
- * Update the WHOIS Contact Information for a given domain.
- *
- * Called when a change of WHOIS Information is requested within WHMCS.
- * Receives an array matching the format provided via the `GetContactDetails`
- * method with the values from the users input.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
 function rotld_SaveContactDetails($params) {
+    /**
+     * Update the WHOIS Contact Information for a given domain.
+     *
+     * Called when a change of WHOIS Information is requested within WHMCS.
+     * Receives an array matching the format provided via the `GetContactDetails`
+     * method with the values from the users input.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -876,23 +967,761 @@ function rotld_SaveContactDetails($params) {
     }
 }
 
-/**
- * Check Domain Availability.
+function rotld_ResendIRTPVerificationEmail($params) {
+    // not implemented
+}
+
+function rotld_GetDNS($params) {
+
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('GetDNSHostRecords', $postfields);
+
+        $hostRecords = array();
+        foreach ($api->getFromResponse('records') as $record) {
+            $hostRecords[] = array(
+                "hostname" => $record['name'], // eg. www
+                "type" => $record['type'], // eg. A
+                "address" => $record['address'], // eg. 10.0.0.1
+                "priority" => $record['mxpref'], // eg. 10 (N/A for non-MX records)
+            );
+        }
+        return $hostRecords;
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+    /**
+     * Get DNS Records for DNS Host Record Management.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array DNS Host Records
+     */
+}
+
+function rotld_SaveDNS($params) {
+    /**
+     * Update DNS Host Records.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userIdentifier = $params['APIUsername'];
+    $apiKey = $params['APIKey'];
+    $testMode = $params['TestMode'];
+    $accountMode = $params['AccountMode'];
+    $emailPreference = $params['EmailPreference'];
+
+    // domain parameters
+    $sld = $params['sld'];
+    $tld = $params['tld'];
+
+    // dns record parameters
+    $dnsrecords = $params['dnsrecords'];
+
+    // Build post data
+    $postfields = array(
+        'username' => $userIdentifier,
+        'password' => $apiKey,
+        'testmode' => $testMode,
+        'domain' => $sld . '.' . $tld,
+        'records' => $dnsrecords,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('GetDNSHostRecords', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_IDProtectToggle($params) {
+    /** OK
+     * Enable/Disable ID Protection.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // id protection parameter
+    $protectEnable = (bool) $params['protectenable'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
+
+    try {
+        $api = new ApiClient();
+
+        if ($protectEnable) {
+            $api->call('EnableIDProtection', $postfields);
+        } else {
+            $api->call('DisableIDProtection', $postfields);
+        }
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_GetEPPCode($params) {
+    /**
+     * Request EEP Code.
+     *
+     * Supports both displaying the EPP Code directly to a user or indicating
+     * that the EPP Code will be emailed to the registrant.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     *
+     */
+    // user defined configuration values
+    $userIdentifier = $params['APIUsername'];
+    $apiKey = $params['APIKey'];
+    $testMode = $params['TestMode'];
+    $accountMode = $params['AccountMode'];
+    $emailPreference = $params['EmailPreference'];
+
+    // domain parameters
+    $sld = $params['sld'];
+    $tld = $params['tld'];
+
+    // Build post data
+    $postfields = array(
+        'username' => $userIdentifier,
+        'password' => $apiKey,
+        'testmode' => $testMode,
+        'domain' => $sld . '.' . $tld,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('RequestEPPCode', $postfields);
+
+        if ($api->getFromResponse('eppcode')) {
+            // If EPP Code is returned, return it for display to the end user
+            return array(
+                'eppcode' => $api->getFromResponse('eppcode'),
+            );
+        } else {
+            // If EPP Code is not returned, it was sent by email, return success
+            return array(
+                'success' => 'success',
+            );
+        }
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_ReleaseDomain($params) {
+    /**
+     * Release a Domain.
+     *
+     * Used to initiate a transfer out such as an IPSTAG change for .UK
+     * domain names.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // transfer tag
+    $transferTag = $params['transfertag'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'newtag' => $transferTag,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('ReleaseDomain', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_RegisterNameserver($params) {
+    /**
+     * Register a Nameserver.
+     *
+     * Adds a child nameserver for the given domain name.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // nameserver parameters
+    $nameserver = $params['nameserver'];
+    $ipAddress = $params['ipaddress'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'nameserver'		=> $nameserver,
+        'ip'				=> $ipAddress,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('RegisterNameserver', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_ModifyNameserver($params) {
+    /**
+     * Modify a Nameserver.
+     *
+     * Modifies the IP of a child nameserver.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // nameserver parameters
+    $nameserver = $params['nameserver'];
+    $currentIpAddress = $params['currentipaddress'];
+    $newIpAddress = $params['newipaddress'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'nameserver'		=> $nameserver,
+        'currentip'			=> $currentIpAddress,
+        'newip'				=> $newIpAddress,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('ModifyNameserver', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_DeleteNameserver($params) {
+    /**
+     * Delete a Nameserver.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // nameserver parameters
+    $nameserver = $params['nameserver'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+        'nameserver'		=> $nameserver,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('DeleteNameserver', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_RequestDelete($params) {
+    /**
+     * Delete Domain.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('DeleteDomain', $postfields);
+
+        return array(
+            'success' => 'success',
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_ClientArea($params) {
+    /**
+     * Client Area Output.
+     *
+     * This function renders output to the domain details interface within
+     * the client area. The return should be the HTML to be output.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return string HTML Output
+     */
+    $output = '
+    <div class="alert alert-info">
+    Your custom HTML output goes here...
+    </div>
+    ';
+
+        //    return $output;
+        return '';
+}
+
+function rotld_ClientAreaCustomButtonArray() {
+    /**
+     * Client Area Custom Button Array.
+     *
+     * Allows you to define additional actions your module supports.
+     * In this example, we register a Push Domain action which triggers
+     * the `rotld_push` function when invoked.
+     *
+     * @return array
+     */
+    return array(
+        // 'Check Balance' => 'CheckBalance',
+    );
+}
+
+function rotld_ClientAreaAllowedFunctions() {
+    /**
+     * Client Area Allowed Functions.
+     *
+     * Only the functions defined within this function or the Client Area
+     * Custom Button Array can be invoked by client level users.
+     *
+     * @return array
+     */
+    return array(
+        // 'Check Balance' => 'CheckBalance',
+    );
+}
+
+function rotld_Sync($params) {
+    /**
+     * Sync Domain Status & Expiration Date.
+     *
+     * Domain syncing is intended to ensure domain status and expiry date
+     * changes made directly at the domain registrar are synced to WHMCS.
+     * It is called periodically for a domain.
+     *
+     * @param array $params common module parameters
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     * @return array
+     *
+     * ROTLD command is "domain-info"
+     *
+     */
+    // user defined configuration values
+    $userHost			= $params['RegistrarDomain'];
+
+    // by default set LIVE user configuration values
+    $userIdentifier		= $params['APIUsername'];
+    $apiKey				= $params['APIKey'];
+    $apiURL				= $params['APIURL'];
+    $testMode			= $params['TestMode'];
+
+    if ($testMode == 'on') {
+        $userIdentifier	= $params['APITestUsername'];
+        $apiKey			= $params['APITestKey'];
+        $apiURL			= $params['APITestURL'];
+    }
+
+    // set domain info
+    $sld 				= $params['sld'];
+    $tld 				= $params['tld'];
+
+    // build post data
+    $postfields = array(
+        'hostname'			=> $userHost,
+        'username'			=> $userIdentifier,
+        'password'			=> $apiKey,
+        'apiurl'			=> $apiURL,
+        'domain'			=> $sld.'.'.$tld,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('Sync', $postfields);
+
+        return array(
+            'expirydate' => $api->getFromResponse('expirydate'), // Format: YYYY-MM-DD
+                     'active' => (bool) $api->getFromResponse('active'), // Return true if the domain is active
+                     'expired' => (bool) $api->getFromResponse('expired'), // Return true if the domain has expired
+                     'transferredAway' => (bool) $api->getFromResponse('transferredaway'), // Return true if the domain is transferred out
+        );
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_TransferSync($params) {
+    /**
+     * Incoming Domain Transfer Sync.
+     *
+     * Check status of incoming domain transfers and notify end-user upon
+     * completion. This function is called daily for incoming domains.
+     *
+     * @param array $params common module parameters
+     *
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @return array
+     */
+    // user defined configuration values
+    $userIdentifier = $params['APIUsername'];
+    $apiKey = $params['APIKey'];
+    $testMode = $params['TestMode'];
+    $accountMode = $params['AccountMode'];
+    $emailPreference = $params['EmailPreference'];
+
+    // domain parameters
+    $sld = $params['sld'];
+    $tld = $params['tld'];
+
+    // Build post data
+    $postfields = array(
+        'username' => $userIdentifier,
+        'password' => $apiKey,
+        'testmode' => $testMode,
+        'domain' => $sld . '.' . $tld,
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('CheckDomainTransfer', $postfields);
+
+        if ($api->getFromResponse('transfercomplete')) {
+            return array(
+                'completed' => true,
+                'expirydate' => $api->getFromResponse('expirydate'), // Format: YYYY-MM-DD
+            );
+        } elseif ($api->getFromResponse('transferfailed')) {
+            return array(
+                'failed' => true,
+                'reason' => $api->getFromResponse('failurereason'), // Reason for the transfer failure if available
+            );
+        } else {
+            // No status change, return empty array
+            return array();
+        }
+
+    } catch (\Exception $e) {
+        return array(
+            'error' => $e->getMessage(),
+        );
+    }
+}
+
+function rotld_GetTldPricing($params) {
+    // not implemented
+}
+
+
+/**********************************
+ *  extra functions
+ **********************************/
+
+function rotld_CheckBalance($params) {
+/**************************************************************
+ * function used to check the existing balance in deposit
  *
- * Determine if a domain or group of domains are available for
- * registration or transfer.
+ * NOT done
  *
- * @param array $params common module parameters
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @see \WHMCS\Domains\DomainLookup\SearchResult
- * @see \WHMCS\Domains\DomainLookup\ResultsList
- *
- * @throws Exception Upon domain availability check failure.
- *
- * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
- */
+ * @return array
+ **************************************************************/
+
+    $userHost		= $params['RegistrarDomain'];
+    $userIdentifier	= $params['APIUsername'];
+    $apiKey			= $params['APIKey'];
+    $apiurl			= '';	// add API URL
+
+    $postfields = array(
+        'apiusr' => $userIdentifier,
+        'apikey' => $apiKey,
+        'myhost' => $userHost,
+        'domain' => '',
+    );
+
+    try {
+        $api = new ApiClient();
+        $api->call('check_balance', $postfields);
+        return array(
+            'success' => true,
+        );
+    } catch (\Exception $e) {
+        return array(
+        'error' => $e->getMessage(),
+        );
+    }
+}
+
 function rotld_CheckAvailability($params) {
+    /**
+     * Check Domain Availability.
+     *
+     * Determine if a domain or group of domains are available for
+     * registration or transfer.
+     *
+     * @param array $params common module parameters
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @see \WHMCS\Domains\DomainLookup\SearchResult
+     * @see \WHMCS\Domains\DomainLookup\ResultsList
+     *
+     * @throws Exception Upon domain availability check failure.
+     *
+     * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+     */
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -965,17 +1794,17 @@ function rotld_CheckAvailability($params) {
     }
 }
 
-/**
- * Domain Suggestion Settings.
- *
- * Defines the settings relating to domain suggestions (optional).
- * It follows the same convention as `getConfigArray`.
- *
- * @see https://developers.whmcs.com/domain-registrars/check-availability/
- *
- * @return array of Configuration Options
- */
 function rotld_DomainSuggestionOptions() {
+    /**
+     * Domain Suggestion Settings.
+     *
+     * Defines the settings relating to domain suggestions (optional).
+     * It follows the same convention as `getConfigArray`.
+     *
+     * @see https://developers.whmcs.com/domain-registrars/check-availability/
+     *
+     * @return array of Configuration Options
+     */
     return array(
         'includeCCTlds' => array(
             'FriendlyName' => 'Include Country Level TLDs',
@@ -985,22 +1814,22 @@ function rotld_DomainSuggestionOptions() {
     );
 }
 
-/**
- * Get Domain Suggestions.
- *
- * Provide domain suggestions based on the domain lookup term provided.
- *
- * @param array $params common module parameters
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @see \WHMCS\Domains\DomainLookup\SearchResult
- * @see \WHMCS\Domains\DomainLookup\ResultsList
- *
- * @throws Exception Upon domain suggestions check failure.
- *
- * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
- */
 function rotld_GetDomainSuggestions($params) {
+    /**
+     * Get Domain Suggestions.
+     *
+     * Provide domain suggestions based on the domain lookup term provided.
+     *
+     * @param array $params common module parameters
+     * @see https://developers.whmcs.com/domain-registrars/module-parameters/
+     *
+     * @see \WHMCS\Domains\DomainLookup\SearchResult
+     * @see \WHMCS\Domains\DomainLookup\ResultsList
+     *
+     * @throws Exception Upon domain suggestions check failure.
+     *
+     * @return \WHMCS\Domains\DomainLookup\ResultsList An ArrayObject based collection of \WHMCS\Domains\DomainLookup\SearchResult results
+     */
     // user defined configuration values
     $userIdentifier = $params['APIUsername'];
     $apiKey = $params['APIKey'];
@@ -1069,799 +1898,38 @@ function rotld_GetDomainSuggestions($params) {
     }
 }
 
-/** OK
- * Get registrar lock status.
- *
- * Also known as Domain Lock or Transfer Lock status.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return string|array Lock status or error message
- */
-function rotld_GetRegistrarLock($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);
-	
-	try {
-		$api = new ApiClient();
-		$api->call('GetLockStatus', $postfields);
-
-		if ($api->getFromResponse('lockstatus') == 'locked') {
-			return 'locked';
-		} else {
-		return 'unlocked';
-		}
-			return 'locked';
-	} catch (\Exception $e) {
-		return array(
-		'error' => $e->getMessage(),
-		);
-	}
-
-
-}
-
-
-/** OK
- * Set registrar lock status.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_SaveRegistrarLock($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-	// lock status
-	$lockStatus = $params['lockenabled'];
-
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-		'registrarlock'		=> ($lockStatus == 'locked') ? 1 : 0,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('SetLockStatus', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Get DNS Records for DNS Host Record Management.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array DNS Host Records
- */
-function rotld_GetDNS($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);	
-	
-    try {
-        $api = new ApiClient();
-        $api->call('GetDNSHostRecords', $postfields);
-
-        $hostRecords = array();
-        foreach ($api->getFromResponse('records') as $record) {
-            $hostRecords[] = array(
-                "hostname" => $record['name'], // eg. www
-                "type" => $record['type'], // eg. A
-                "address" => $record['address'], // eg. 10.0.0.1
-                "priority" => $record['mxpref'], // eg. 10 (N/A for non-MX records)
-            );
-        }
-        return $hostRecords;
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Update DNS Host Records.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_SaveDNS($params) {
-    // user defined configuration values
-    $userIdentifier = $params['APIUsername'];
-    $apiKey = $params['APIKey'];
-    $testMode = $params['TestMode'];
-    $accountMode = $params['AccountMode'];
-    $emailPreference = $params['EmailPreference'];
-
-    // domain parameters
-    $sld = $params['sld'];
-    $tld = $params['tld'];
-
-    // dns record parameters
-    $dnsrecords = $params['dnsrecords'];
-
-    // Build post data
-    $postfields = array(
-        'username' => $userIdentifier,
-        'password' => $apiKey,
-        'testmode' => $testMode,
-        'domain' => $sld . '.' . $tld,
-        'records' => $dnsrecords,
-    );
-
-    try {
-        $api = new ApiClient();
-        $api->call('GetDNSHostRecords', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/** OK
- * Enable/Disable ID Protection.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_IDProtectToggle($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-    // id protection parameter
-    $protectEnable = (bool) $params['protectenable'];
-
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);
-
-    try {
-        $api = new ApiClient();
-
-        if ($protectEnable) {
-            $api->call('EnableIDProtection', $postfields);
-        } else {
-            $api->call('DisableIDProtection', $postfields);
-        }
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Request EEP Code.
- *
- * Supports both displaying the EPP Code directly to a user or indicating
- * that the EPP Code will be emailed to the registrant.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- *
- */
-function rotld_GetEPPCode($params) {
-    // user defined configuration values
-    $userIdentifier = $params['APIUsername'];
-    $apiKey = $params['APIKey'];
-    $testMode = $params['TestMode'];
-    $accountMode = $params['AccountMode'];
-    $emailPreference = $params['EmailPreference'];
-
-    // domain parameters
-    $sld = $params['sld'];
-    $tld = $params['tld'];
-
-    // Build post data
-    $postfields = array(
-        'username' => $userIdentifier,
-        'password' => $apiKey,
-        'testmode' => $testMode,
-        'domain' => $sld . '.' . $tld,
-    );
-
-    try {
-        $api = new ApiClient();
-        $api->call('RequestEPPCode', $postfields);
-
-        if ($api->getFromResponse('eppcode')) {
-            // If EPP Code is returned, return it for display to the end user
-            return array(
-                'eppcode' => $api->getFromResponse('eppcode'),
-            );
-        } else {
-            // If EPP Code is not returned, it was sent by email, return success
-            return array(
-                'success' => 'success',
-            );
-        }
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Release a Domain.
- *
- * Used to initiate a transfer out such as an IPSTAG change for .UK
- * domain names.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_ReleaseDomain($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-    // transfer tag
-    $transferTag = $params['transfertag'];
-
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-		'newtag' => $transferTag,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('ReleaseDomain', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Delete Domain.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_RequestDelete($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('DeleteDomain', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Register a Nameserver.
- *
- * Adds a child nameserver for the given domain name.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_RegisterNameserver($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-    // nameserver parameters
-    $nameserver = $params['nameserver'];
-    $ipAddress = $params['ipaddress'];
-	
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-        'nameserver'		=> $nameserver,
-        'ip'				=> $ipAddress,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('RegisterNameserver', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Modify a Nameserver.
- *
- * Modifies the IP of a child nameserver.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_ModifyNameserver($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-    // nameserver parameters
-    $nameserver = $params['nameserver'];
-    $currentIpAddress = $params['currentipaddress'];
-    $newIpAddress = $params['newipaddress'];
-	
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-        'nameserver'		=> $nameserver,
-        'currentip'			=> $currentIpAddress,
-        'newip'				=> $newIpAddress,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('ModifyNameserver', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Delete a Nameserver.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_DeleteNameserver($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-
-    // nameserver parameters
-    $nameserver = $params['nameserver'];
-	
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-        'nameserver'		=> $nameserver,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('DeleteNameserver', $postfields);
-
-        return array(
-            'success' => 'success',
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Sync Domain Status & Expiration Date.
- *
- * Domain syncing is intended to ensure domain status and expiry date
- * changes made directly at the domain registrar are synced to WHMCS.
- * It is called periodically for a domain.
- *
- * @param array $params common module parameters
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- * @return array
- *
- * ROTLD command is "domain-info"
- *
- */
-function rotld_Sync($params) {
-	
-	// user defined configuration values
-	$userHost			= $params['RegistrarDomain'];
-	
-	// by default set LIVE user configuration values
-	$userIdentifier		= $params['APIUsername'];
-	$apiKey				= $params['APIKey'];
-	$apiURL				= $params['APIURL'];
-	$testMode			= $params['TestMode'];
-		
-	if ($testMode == 'on') {
-		$userIdentifier	= $params['APITestUsername'];
-		$apiKey			= $params['APITestKey'];
-		$apiURL			= $params['APITestURL'];
-	}
-
-	// set domain info
-	$sld 				= $params['sld'];
-	$tld 				= $params['tld'];	
-	
-	// build post data
-	$postfields = array(
-		'hostname'			=> $userHost,		
-		'username'			=> $userIdentifier,
-        'password'			=> $apiKey,
-		'apiurl'			=> $apiURL,
-		'domain'			=> $sld.'.'.$tld,
-	);
-
-    try {
-        $api = new ApiClient();
-        $api->call('Sync', $postfields);
-
-        return array(
-            'expirydate' => $api->getFromResponse('expirydate'), // Format: YYYY-MM-DD
-            'active' => (bool) $api->getFromResponse('active'), // Return true if the domain is active
-            'expired' => (bool) $api->getFromResponse('expired'), // Return true if the domain has expired
-            'transferredAway' => (bool) $api->getFromResponse('transferredaway'), // Return true if the domain is transferred out
-        );
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Incoming Domain Transfer Sync.
- *
- * Check status of incoming domain transfers and notify end-user upon
- * completion. This function is called daily for incoming domains.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return array
- */
-function rotld_TransferSync($params) {
-    // user defined configuration values
-    $userIdentifier = $params['APIUsername'];
-    $apiKey = $params['APIKey'];
-    $testMode = $params['TestMode'];
-    $accountMode = $params['AccountMode'];
-    $emailPreference = $params['EmailPreference'];
-
-    // domain parameters
-    $sld = $params['sld'];
-    $tld = $params['tld'];
-
-    // Build post data
-    $postfields = array(
-        'username' => $userIdentifier,
-        'password' => $apiKey,
-        'testmode' => $testMode,
-        'domain' => $sld . '.' . $tld,
-    );
-
-    try {
-        $api = new ApiClient();
-        $api->call('CheckDomainTransfer', $postfields);
-
-        if ($api->getFromResponse('transfercomplete')) {
-            return array(
-                'completed' => true,
-                'expirydate' => $api->getFromResponse('expirydate'), // Format: YYYY-MM-DD
-            );
-        } elseif ($api->getFromResponse('transferfailed')) {
-            return array(
-                'failed' => true,
-                'reason' => $api->getFromResponse('failurereason'), // Reason for the transfer failure if available
-            );
-        } else {
-            // No status change, return empty array
-            return array();
-        }
-
-    } catch (\Exception $e) {
-        return array(
-            'error' => $e->getMessage(),
-        );
-    }
-}
-
-/**
- * Client Area Custom Button Array.
- *
- * Allows you to define additional actions your module supports.
- * In this example, we register a Push Domain action which triggers
- * the `rotld_push` function when invoked.
- *
- * @return array
- */
-function rotld_ClientAreaCustomButtonArray() {
-    return array(
-        // 'Check Balance' => 'CheckBalance',
-    );
-}
-
-/**
- * Client Area Allowed Functions.
- *
- * Only the functions defined within this function or the Client Area
- * Custom Button Array can be invoked by client level users.
- *
- * @return array
- */
-function rotld_ClientAreaAllowedFunctions() {
-    return array(
-        // 'Check Balance' => 'CheckBalance',
-    );
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Example Custom Module Function: Push
@@ -1889,26 +1957,6 @@ function rotld_push($params) {
     return 'Not implemented';
 }
 
-/**
- * Client Area Output.
- *
- * This function renders output to the domain details interface within
- * the client area. The return should be the HTML to be output.
- *
- * @param array $params common module parameters
- *
- * @see https://developers.whmcs.com/domain-registrars/module-parameters/
- *
- * @return string HTML Output
- */
-function rotld_ClientArea($params) {
-    $output = '
-        <div class="alert alert-info">
-            Your custom HTML output goes here...
-        </div>
-    ';
 
-//    return $output;
-return '';
-}
+
 
