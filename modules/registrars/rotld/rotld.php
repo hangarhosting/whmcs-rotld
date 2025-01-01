@@ -28,7 +28,7 @@ function rotld_MetaData() {
  * @return array
  *
  */
-	return array (
+    return array (
 		'DisplayName'	=> 'ROTLD',
 		'Description'	=> 'Description',
 		'APIVersion'	=> '1.1',
@@ -125,11 +125,14 @@ function rotld_getConfigArray() {
 
 
 /** 
- *	Operational functions
+ * Operational functions
+ * @see https://developers.whmcs.com/domain-registrars/function-index/
  */
 
 function rotld_RegisterDomain($params) {
     /**
+     * NOT yet implemented in this module
+     *
      * Register a domain.
      *
      * Attempt to register a domain with the domain registrar.
@@ -293,6 +296,8 @@ function rotld_RegisterDomain($params) {
 
 function rotld_TransferDomain($params) {
     /**
+     * NOT yet implemented in this module
+     *
      * Initiate domain transfer.
      *
      * Attempt to create a domain transfer request for a given domain.
@@ -456,6 +461,9 @@ function rotld_TransferDomain($params) {
 
 function rotld_RenewDomain($params) {
     /** OK
+     * NOT yet implemented in this module
+     *
+     *
      * Renew a domain.
      *
      * Attempt to renew/extend a domain for a given number of years.
@@ -520,19 +528,26 @@ function rotld_RenewDomain($params) {
 }
 
 function rotld_GetDomainInformation($params) {
-    // not implemented
+/**
+ * not implemented
+ */
 }
 
 function rotld_GetEmailForwarding($params) {
-    // not implemented
+/**
+ * NOT implemented
+ */
 }
 
 function rotld_SaveEmailForwarding($params) {
-    // not implemented
+/**
+ * NOT implemented
+ *
+ */
 }
 
 function rotld_GetNameservers($params) {
-    /** OK
+    /**
      * Fetch current nameservers.
      *
      * This function should return an array of nameservers for a given domain.
@@ -563,7 +578,6 @@ function rotld_GetNameservers($params) {
     $sld 				= $params['sld'];
     $tld 				= $params['tld'];
 
-
     // build post data
     $postfields = array(
         'hostname'			=> $userHost,
@@ -580,10 +594,10 @@ function rotld_GetNameservers($params) {
         return array(
             'success' => true,
             'ns1' => $api->getFromResponse('nameserver1'),
-                     'ns2' => $api->getFromResponse('nameserver2'),
-                     'ns3' => $api->getFromResponse('nameserver3'),
-                     'ns4' => $api->getFromResponse('nameserver4'),
-                     'ns5' => $api->getFromResponse('nameserver5'),
+            'ns2' => $api->getFromResponse('nameserver2'),
+            'ns3' => $api->getFromResponse('nameserver3'),
+            'ns4' => $api->getFromResponse('nameserver4'),
+            'ns5' => $api->getFromResponse('nameserver5'),
         );
 
     } catch (\Exception $e) {
@@ -1663,7 +1677,11 @@ function rotld_TransferSync($params) {
 }
 
 function rotld_GetTldPricing($params) {
-    // not implemented
+    /**
+     * NOT implemented
+     *
+     */
+    return array();
 }
 
 
