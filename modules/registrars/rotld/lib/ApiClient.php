@@ -3,14 +3,59 @@
 namespace WHMCS\Module\Registrar\rotld;
 
 
-/**
- * RoTLD Registrar API Client.
- * A simple API Client for communicating with an external API endpoint.
- *
- * version 0.1
- *
- */
+class ApiCall {
+	/**
+	 *
+	 *
+	 *
+	 */
+	protected	$results	= array();
+	private		$params		= array();
+	private		$fields		= array();
+	private		$cid;
+
+	public function ApiCall($configuration_parameters) {
+		$this->params['post_fiels']	= '';
+		$this->params['host']		= 'undefined';
+		$this->fields['lang']		= 'en';
+		$this->fields['format']		= 'json';
+
+		if(isset($configuration_parameters['lang']) && $configuration_parameters['lang']!='') {
+			$this->fields['lang'] = $configuration_parameters['lang'];
+		}
+
+		if(isset($configuration_parameters['format']) && $configuration_parameters['format']!='') {
+			$this->fields['format'] = $configuration_parameters['format'];
+		}
+
+		if(!isset($configuration_parameters['apiurl'])) throw new Exception('Invalid apiurl');
+		$this->params['url'] = $configuration_parameters['apiurl'];
+
+		if(isset($configuration_parameters['registrar_domain'])) {
+			$this->params['host'] = $configuration_parameters['registrar_domain'];
+		}
+
+		if(!isset($configuration_parameters['regid'])) throw new Exception('Invalid regid');
+		$this->params['login'] = trim($configuration_parameters['regid']);
+
+		if(!isset($configuration_parameters['password'])) throw new Exception('Invalid password');
+		$this->params['password'] = trim($configuration_parameters['password']);
+
+
+	}
+
+
+}
+
+
 class ApiClient {
+	/**
+	 * RoTLD Registrar API Client.
+	 * A simple API Client for communicating with an external API endpoint.
+	 *
+	 * version 0.1
+	 *
+	 */
 	protected $results	= array();
 	private $params;
 	private $cid;
@@ -641,7 +686,6 @@ class ApiClient {
 
 }
 
-
 class RotldApiClient {
 	private $params = array();
 	private $fields = array();
@@ -653,6 +697,7 @@ class RotldApiClient {
 		$this->fields['format']			='json';
 
 		if(isset($config_params['lang']) && $config_params['lang']!='') $this->fields['lang'] = $config_params['lang'];
+
 		if(isset($config_params['format']) && $config_params['format']!='') $this->fields['format'] = $config_params['format'];
 
 		if(!isset($config_params['apiurl'])) throw new Exception('Invalid apiurl');
@@ -768,3 +813,4 @@ class CurlRequest {
 	
 	
 }
+
