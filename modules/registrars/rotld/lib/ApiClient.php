@@ -28,23 +28,58 @@ class ApiCall {
 			$this->fields['format'] = $configuration_parameters['format'];
 		}
 
-		if(!isset($configuration_parameters['apiurl'])) throw new Exception('Invalid apiurl');
+		if(!isset($configuration_parameters['apiurl'])) throw new \Exception('Invalid apiurl');
 		$this->params['url'] = $configuration_parameters['apiurl'];
 
 		if(isset($configuration_parameters['registrar_domain'])) {
 			$this->params['host'] = $configuration_parameters['registrar_domain'];
 		}
 
-		if(!isset($configuration_parameters['regid'])) throw new Exception('Invalid regid');
+		if(!isset($configuration_parameters['regid'])) throw new \Exception('Invalid regid');
 		$this->params['login'] = trim($configuration_parameters['regid']);
 
-		if(!isset($configuration_parameters['password'])) throw new Exception('Invalid password');
+		if(!isset($configuration_parameters['password'])) throw new \Exception('Invalid password');
 		$this->params['password'] = trim($configuration_parameters['password']);
 
 
 	}
 
+	public function set_param($param,$value) {
+		$this->fields[$param] = trim($value);
+	}
 
+	public function reset() {
+		$this->fields = array();
+	}
+
+	public function commit() {
+		$poststr = '';
+		$fields = $this->fields;
+		if(is_array($fields) && sizeof($fields)) {
+			foreach($fields as $key=>$val) {
+				$val = urlencode($val);
+				$poststr.=$key."=".$val."&";
+			}
+		}
+		$this->params['post_fields']=$poststr;
+
+		$ch = new CurlRequest();
+		$ch->init($this->params);
+		$result = $ch->exec();
+		if ($result['http_code']!='200') {
+			switch ($result['http_code']){
+				case '401':
+					throw new Exception("Authentication Failure. Invalid credentials.");
+				case '500':
+					throw new Exception("Service not available.");
+				default:
+					throw new Exception("Service not available.");
+			}
+		}
+		if (!$result['body'])   throw new Exception("Invalid response from server");
+
+		return $result['body'];
+	}
 }
 
 
